@@ -69,7 +69,7 @@ await client.PurgeAsync("Test1");
 
 ### Keys
 
-Secrets functionality is accessed through the `KeyVaultKeyClient` class in namespace `ByteDev.Azure.KeyVault.Keys`.
+Keys functionality is accessed through the `KeyVaultKeyClient` class in namespace `ByteDev.Azure.KeyVault.Keys`.
 
 Methods:
 - CreateAsync
