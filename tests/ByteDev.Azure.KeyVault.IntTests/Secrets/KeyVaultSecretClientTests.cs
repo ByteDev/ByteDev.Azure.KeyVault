@@ -1,17 +1,15 @@
-﻿using System.Threading.Tasks;
-using Azure;
+﻿using Azure;
 using ByteDev.Azure.KeyVault.Secrets;
 using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace ByteDev.Azure.KeyVault.IntTests.Secrets
 {
     [TestFixture]
-    public class KeyVaultSecretClientTests
+    public class KeyVaultSecretClientTests : KeyVaultTestBase
     {
         private IKeyVaultSecretClient _sut;
-
-        private TestSettings TestSettings { get; set; }
-
+        
         private async Task<string> SaveSecretAsync(string name, string value = null)
         {
             if (value == null)
@@ -31,20 +29,13 @@ namespace ByteDev.Azure.KeyVault.IntTests.Secrets
         {
             return _sut.DeleteAllAsync(true);
         }
-
-        [OneTimeSetUp]
-        public void ClassSetUp()
-        {
-            // TODO: use Testing package
-            TestSettings = TestSettingsSerializer.Deserialize();
-        }
-
+        
         [SetUp]
         public void SetUp()
         {
-            var keyVaultUri = KeyVaultUri.Create(TestSettings.KeyVaultName);
+            var keyVaultUri = KeyVaultUri.Create(TestAzureKvSettings.KeyVaultName);
 
-            _sut = new KeyVaultSecretClient(keyVaultUri.AbsoluteUri, ClientSecretCredentialFactory.CreateFor(TestSettings));
+            _sut = new KeyVaultSecretClient(keyVaultUri.AbsoluteUri, TestAzureKvSettings.ToClientSecretCredential());
         }
         
         // [Test]

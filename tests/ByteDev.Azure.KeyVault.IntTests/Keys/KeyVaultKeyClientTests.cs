@@ -1,34 +1,26 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using Azure.Security.KeyVault.Keys;
+﻿using Azure.Security.KeyVault.Keys;
 using Azure.Security.KeyVault.Keys.Cryptography;
 using ByteDev.Azure.KeyVault.Keys;
 using NUnit.Framework;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace ByteDev.Azure.KeyVault.IntTests.Keys
 {
     [TestFixture]
-    public class KeyVaultKeyClientTests
+    public class KeyVaultKeyClientTests : KeyVaultTestBase
     {
         private const string ClearText = "Some test string";
 
         private IKeyVaultKeyClient _sut;
 
-        private TestSettings TestSettings { get; set; }
-
-        [OneTimeSetUp]
-        public void ClassSetUp()
-        {
-            TestSettings = TestSettingsSerializer.Deserialize();
-        }
-
         [SetUp]
         public void SetUp()
         {
-            var keyVaultUri = KeyVaultUri.Create(TestSettings.KeyVaultName);
+            var keyVaultUri = KeyVaultUri.Create(TestAzureKvSettings.KeyVaultName);
 
-            _sut = new KeyVaultKeyClient(keyVaultUri.AbsoluteUri, ClientSecretCredentialFactory.CreateFor(TestSettings));
+            _sut = new KeyVaultKeyClient(keyVaultUri.AbsoluteUri, TestAzureKvSettings.ToClientSecretCredential());
         }
 
         [TestFixture]

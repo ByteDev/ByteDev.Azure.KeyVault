@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ByteDev.Azure.KeyVault.IntTests
+namespace ByteDev.Azure.KeyVault.IntTests.Keys
 {
     public static class TestKey
     {
