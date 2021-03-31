@@ -29,25 +29,27 @@ Full details of the release notes can be viewed on [GitHub](https://github.com/B
 Secrets functionality is accessed through the `KeyVaultSecretClient` class in namespace `ByteDev.Azure.KeyVault.Secrets`.
 
 Methods:
+- DeleteAllAsync
+- DeleteAndPurgeAsync
+- DeleteAsync
+- DeleteIfExistsAsync
 - ExistsAsync
 - GetAllAsync
 - GetAsync
+- GetDeletedAsync
+- GetDeletedIfExistsAsync
 - GetIfExistsAsync
+- GetSectionAsync
 - GetValueAsync
 - GetValueIfExistsAsync
 - GetValuesIfExistsAsync
 - IsDeletedAsync
-- GetDeletedAsync
-- GetDeletedIfExistsAsync
-- SetValueAsync
-- DeleteAllAsync
-- DeleteAsync
-- DeleteIfExistsAsync
-- DeleteAndPurgeAsync
 - IsDeletedAsync
+- PurgeAllDeletedAsync
 - PurgeAsync
 - PurgeIfDeletedAsync
-- PurgeAllDeletedAsync
+- SafeSetValueAsync
+- SetValueAsync
 
 Example usage:
 
@@ -73,11 +75,11 @@ Keys functionality is accessed through the `KeyVaultKeyClient` class in namespac
 
 Methods:
 - CreateAsync
-- GetAsync
-- EncryptAsync
 - DecryptAsync
-- WrapAsync
+- EncryptAsync
+- GetAsync
 - UnwrapAsync
+- WrapAsync
 
 Example usage:
 

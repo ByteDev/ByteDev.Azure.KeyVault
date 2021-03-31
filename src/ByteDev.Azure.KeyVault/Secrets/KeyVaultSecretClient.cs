@@ -21,6 +21,8 @@ namespace ByteDev.Azure.KeyVault.Secrets
         /// </summary>
         public Uri KeyVaultUri { get; }
 
+        #region Constructor
+
         /// <summary>
         /// Initializes a new instance of the <see cref="T:ByteDev.Azure.KeyVault.Secrets.KeyVaultSecretClient" /> class.
         /// The token credential DefaultAzureCredential will be used to authenticate the client.
@@ -46,6 +48,7 @@ namespace ByteDev.Azure.KeyVault.Secrets
         /// </summary>
         /// <param name="keyVaultUri">Key vault URI.</param>
         /// <param name="tokenCredential">Token credential to use when authenticating the client.</param>
+        /// <exception cref="T:System.ArgumentException"><paramref name="keyVaultUri" /> cannot be null or empty.</exception>
         public KeyVaultSecretClient(string keyVaultUri, TokenCredential tokenCredential)
         {
             if (string.IsNullOrEmpty(keyVaultUri))
@@ -56,6 +59,8 @@ namespace ByteDev.Azure.KeyVault.Secrets
             _client = new SecretClient(KeyVaultUri, tokenCredential);
         }
 
+        #endregion
+
         #region Get
 
         /// <summary>
@@ -63,7 +68,8 @@ namespace ByteDev.Azure.KeyVault.Secrets
         /// </summary>
         /// <param name="name">Name of the secret.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <returns>The task object representing the asynchronous operation. Result will be true if the secret exists; otherwise false.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="name" /> cannot be null or empty.</exception>
         public async Task<bool> ExistsAsync(string name, CancellationToken cancellationToken = default)
         {
             try
@@ -81,7 +87,7 @@ namespace ByteDev.Azure.KeyVault.Secrets
         /// Retrieves all secrets.
         /// </summary>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <returns>The task object representing the asynchronous operation. Result will be a list of secrets.</returns>
         public async Task<IList<KeyVaultSecret>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             AsyncPageable<SecretProperties> secretProperties = _client.GetPropertiesOfSecretsAsync(cancellationToken);
@@ -99,11 +105,40 @@ namespace ByteDev.Azure.KeyVault.Secrets
         }
 
         /// <summary>
+        /// Retrieves all secrets for a particular section. For example the section name for secret names:
+        /// "MySection--Secret1" and "MySection--Secret2" is "MySection".
+        /// </summary>
+        /// <param name="sectionName">Section name.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>The task object representing the asynchronous operation. Result will be a list of secrets.</returns>
+        public async Task<IList<KeyVaultSecret>> GetSectionAsync(string sectionName, CancellationToken cancellationToken = default)
+        {
+            AsyncPageable<SecretProperties> secretProperties = _client.GetPropertiesOfSecretsAsync(cancellationToken);
+
+            var secrets = new List<KeyVaultSecret>();
+
+            var sectionPrefix = CreateSectionPrefix(sectionName);
+
+            await foreach (var secretProperty in secretProperties)
+            {
+                if (secretProperty.Name.StartsWith(sectionPrefix))
+                {
+                    var secret = await GetAsync(secretProperty.Name, cancellationToken).ConfigureAwait(false);
+
+                    secrets.Add(secret);
+                }
+            }
+
+            return secrets;
+        }
+
+        /// <summary>
         /// Retrieves a secret. If the secret does not exist then an exception is thrown.
         /// </summary>
         /// <param name="name">Name of the secret.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <returns>The task object representing the asynchronous operation. Result will be the secret.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="name" /> cannot be null or empty.</exception>
         /// <exception cref="T:ByteDev.Azure.KeyVault.Secrets.SecretNotFoundException">Secret could not be found.</exception>
         public async Task<KeyVaultSecret> GetAsync(string name, CancellationToken cancellationToken = default)
         {
@@ -129,7 +164,8 @@ namespace ByteDev.Azure.KeyVault.Secrets
         /// </summary>
         /// <param name="name">Name of the secret.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <returns>The task object representing the asynchronous operation. Result will be the secret.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="name" /> cannot be null or empty.</exception>
         public async Task<KeyVaultSecret> GetIfExistsAsync(string name, CancellationToken cancellationToken = default)
         {
             try
@@ -143,11 +179,12 @@ namespace ByteDev.Azure.KeyVault.Secrets
         }
 
         /// <summary>
-        /// Retrieves a secret's value. If the secret does not exist then an exception is thrown.
+        /// Retrieves a secret's current value. If the secret does not exist then an exception is thrown.
         /// </summary>
         /// <param name="name">Name of the secret.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <returns>The task object representing the asynchronous operation. Result will be the secret's current value.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="name" /> cannot be null or empty.</exception>
         /// <exception cref="T:ByteDev.Azure.KeyVault.Secrets.SecretNotFoundException">Secret could not be found.</exception>
         public async Task<string> GetValueAsync(string name, CancellationToken cancellationToken = default)
         {
@@ -157,11 +194,12 @@ namespace ByteDev.Azure.KeyVault.Secrets
         }
 
         /// <summary>
-        /// Retrieves a secret's value. If the secret does not exist then null is returned.
+        /// Retrieves a secret's current value. If the secret does not exist then null result is returned.
         /// </summary>
         /// <param name="name">Name of the secret.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <returns>The task object representing the asynchronous operation. Result will be the secret's value.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="name" /> cannot be null or empty.</exception>
         public async Task<string> GetValueIfExistsAsync(string name, CancellationToken cancellationToken = default)
         {
             var secret = await GetIfExistsAsync(name, cancellationToken).ConfigureAwait(false);
@@ -170,11 +208,12 @@ namespace ByteDev.Azure.KeyVault.Secrets
         }
 
         /// <summary>
-        /// Retrieves a collection of secret's names and values. If any secret does not exist then it's value will be null.
+        /// Retrieves a dictionary of secret's names and current values.
+        /// If any secret does not exist then it's value will be null.
         /// </summary>
         /// <param name="names">Collection of secret's names.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <returns>The task object representing the asynchronous operation. Result will be a dictionary of name values.</returns>
         public async Task<IDictionary<string, string>> GetValuesIfExistsAsync(IEnumerable<string> names, CancellationToken cancellationToken = default)
         {
             if (names == null)
@@ -200,11 +239,12 @@ namespace ByteDev.Azure.KeyVault.Secrets
         #region Get Deleted
 
         /// <summary>
-        /// Checks whether a secret is soft deleted but yet to be purged.
+        /// Determines whether a secret is soft deleted but yet to be purged.
         /// </summary>
         /// <param name="name">Name of the secret.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <returns>The task object representing the asynchronous operation. Result true if the secret is deleted; otherwise false.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="name" /> cannot be null or empty.</exception>
         public async Task<bool> IsDeletedAsync(string name, CancellationToken cancellationToken = default)
         {
             try
@@ -223,7 +263,8 @@ namespace ByteDev.Azure.KeyVault.Secrets
         /// </summary>
         /// <param name="name">Name of the secret.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <returns>The task object representing the asynchronous operation. Result will be the deleted secret.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="name" /> cannot be null or empty.</exception>
         /// <exception cref="T:ByteDev.Azure.KeyVault.Secrets.SecretNotFoundException">Secret could not be found.</exception>
         public async Task<DeletedSecret> GetDeletedAsync(string name, CancellationToken cancellationToken = default)
         {
@@ -249,7 +290,8 @@ namespace ByteDev.Azure.KeyVault.Secrets
         /// </summary>
         /// <param name="name">Name of the secret.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <returns>The task object representing the asynchronous operation. Result will be the deleted secret or null.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="name" /> cannot be null or empty.</exception>
         public async Task<DeletedSecret> GetDeletedIfExistsAsync(string name, CancellationToken cancellationToken = default)
         {
             try
@@ -267,18 +309,45 @@ namespace ByteDev.Azure.KeyVault.Secrets
         #region Set
 
         /// <summary>
-        /// Sets a secret's value. If the secret does not exist then it is created.
-        /// If the secret exists then its value is updated.
+        /// Sets a secret's current value. If the secret does not exist then it is created.
+        /// If the secret exists then a new current version is created.
         /// </summary>
         /// <param name="name">Name of the secret.</param>
         /// <param name="value">New value for the secret.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="name" /> cannot be null or empty.</exception>
         public Task SetValueAsync(string name, string value, CancellationToken cancellationToken = default)
         {
             ValidateName(name);
 
             return _client.SetSecretAsync(name, value, cancellationToken);
+        }
+
+        /// <summary>
+        /// Sets a secret's current value in a idempotent manner.
+        /// If the secret does not exist then it is created.
+        /// If the secret exists and it's current value is different to the new one then a new current version is created and result true will be returned.
+        /// If the secret exists and it's current value is equal to the new value then no set will be performed and result false will be returned.
+        /// </summary>
+        /// <param name="name">Name of the secret.</param>
+        /// <param name="value">New value for the secret.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>The task object representing the asynchronous operation. Result will be true if a secret was set; otherwise false.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="name" /> cannot be null or empty.</exception>
+        public async Task<bool> SafeSetValueAsync(string name, string value, CancellationToken cancellationToken = default)
+        {
+            ValidateName(name);
+
+            var oldValue = await GetValueIfExistsAsync(name, cancellationToken);
+
+            if (oldValue != value)
+            {
+                await SetValueAsync(name, value, cancellationToken);
+                return true;
+            }
+
+            return false;
         }
 
         #endregion
@@ -312,6 +381,7 @@ namespace ByteDev.Azure.KeyVault.Secrets
         /// <param name="waitToComplete">Indicates if we should wait for the secret delete operation to complete before returning.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="name" /> cannot be null or empty.</exception>
         /// <exception cref="T:ByteDev.Azure.KeyVault.Secrets.SecretNotFoundException">Secret could not be found.</exception>
         public async Task DeleteAsync(string name, bool waitToComplete, CancellationToken cancellationToken = default)
         {
@@ -340,6 +410,7 @@ namespace ByteDev.Azure.KeyVault.Secrets
         /// <param name="waitToComplete">Indicates if we should wait for the secret delete operation to complete before returning.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="name" /> cannot be null or empty.</exception>
         public async Task DeleteIfExistsAsync(string name, bool waitToComplete, CancellationToken cancellationToken = default)
         {
             try
@@ -353,11 +424,12 @@ namespace ByteDev.Azure.KeyVault.Secrets
         }
 
         /// <summary>
-        /// Soft deletes a secret and purges it. If the secret does not exist then an exception is thrown.
+        /// Deletes a secret and purges it. If the secret does not exist then an exception is thrown.
         /// </summary>
         /// <param name="name">Name of the secret.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="name" /> cannot be null or empty.</exception>
         /// <exception cref="T:ByteDev.Azure.KeyVault.Secrets.SecretNotFoundException">Secret could not be found.</exception>
         public async Task DeleteAndPurgeAsync(string name, CancellationToken cancellationToken = default)
         {
@@ -376,6 +448,7 @@ namespace ByteDev.Azure.KeyVault.Secrets
         /// <param name="name">Name of the secret.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="name" /> cannot be null or empty.</exception>
         /// <exception cref="T:ByteDev.Azure.KeyVault.Secrets.SecretNotFoundException">Secret could not be found.</exception>
         public async Task PurgeAsync(string name, CancellationToken cancellationToken = default)
         {
@@ -433,6 +506,17 @@ namespace ByteDev.Azure.KeyVault.Secrets
         {
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentException("Secret name cannot be null or empty.");
+        }
+
+        private static string CreateSectionPrefix(string sectionName)
+        {
+            if (string.IsNullOrEmpty(sectionName))
+                return string.Empty;
+
+            if (sectionName.EndsWith("--"))
+                return sectionName;
+
+            return sectionName + "--";
         }
     }
 }

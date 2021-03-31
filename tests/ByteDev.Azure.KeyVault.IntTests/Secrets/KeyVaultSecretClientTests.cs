@@ -12,10 +12,13 @@ namespace ByteDev.Azure.KeyVault.IntTests.Secrets
 
         private TestSettings TestSettings { get; set; }
 
-        private async Task<string> SaveSecretAsync(string name)
+        private async Task<string> SaveSecretAsync(string name, string value = null)
         {
-            var value = TestSecret.NewValue();
+            if (value == null)
+                value = TestSecret.NewValue();
+
             await _sut.SetValueAsync(name, value);
+
             return value;
         }
 
@@ -32,6 +35,7 @@ namespace ByteDev.Azure.KeyVault.IntTests.Secrets
         [OneTimeSetUp]
         public void ClassSetUp()
         {
+            // TODO: use Testing package
             TestSettings = TestSettingsSerializer.Deserialize();
         }
 
@@ -103,6 +107,40 @@ namespace ByteDev.Azure.KeyVault.IntTests.Secrets
                 var result = await _sut.GetAllAsync();
 
                 Assert.That(result.Count, Is.EqualTo(3));
+            }
+        }
+
+        [TestFixture]
+        public class GetSectionAsync : KeyVaultSecretClientTests
+        {
+            [Test]
+            public async Task WhenNoSecretsExist_ThenReturnEmpty()
+            {
+                await DeleteAllSecretsAsync();
+
+                var result = await _sut.GetSectionAsync("MySection");
+
+                Assert.That(result, Is.Empty);
+            }
+
+            [Test]
+            public async Task WhenSectionSecretsExist_ThenReturnSectionSecrets()
+            {
+                await DeleteAllSecretsAsync();
+
+                var name1 = TestSecret.NewName("MySection1--GS");
+                var name2 = TestSecret.NewName("MySection2--GS");
+                var name3 = TestSecret.NewName("MySection2--GS");
+
+                await SaveSecretAsync(name1);
+                await SaveSecretAsync(name2);
+                await SaveSecretAsync(name3);
+
+                var result = await _sut.GetSectionAsync("MySection2");
+
+                Assert.That(result.Count, Is.EqualTo(2));
+                Assert.That(result[0].Name, Is.EqualTo(name2).Or.EqualTo(name3));
+                Assert.That(result[1].Name, Is.EqualTo(name2).Or.EqualTo(name3));
             }
         }
 
@@ -264,6 +302,57 @@ namespace ByteDev.Azure.KeyVault.IntTests.Secrets
                 var result = await _sut.GetValueAsync(name);
 
                 Assert.That(result, Is.EqualTo("newValue"));
+            }
+        }
+
+        [TestFixture]
+        public class SafeSetValueAsync : KeyVaultSecretClientTests
+        {
+            private string _name;
+
+            [SetUp]
+            public new void SetUp()
+            {
+                _name = TestSecret.NewName("SSV");
+            }
+
+            [Test]
+            public async Task WhenSecretDoesNotExists_ThenCreateSecret()
+            {
+                var newValue = TestSecret.NewValue();
+
+                var result = await _sut.SafeSetValueAsync(_name, newValue);
+
+                Assert.That(result, Is.True);
+                Assert.That(await _sut.GetValueAsync(_name), Is.EqualTo(newValue));
+            }
+
+            [Test]
+            public async Task WhenSecretExists_AndDiffValue_ThenCreateNewVersion()
+            {
+                const string oldValue = "123";
+                const string newValue = "12345";
+
+                await SaveSecretAsync(_name, oldValue);
+                
+                var result = await _sut.SafeSetValueAsync(_name, newValue);
+
+                Assert.That(result, Is.True);
+                Assert.That(await _sut.GetValueAsync(_name), Is.EqualTo(newValue));
+            }
+
+            [Test]
+            public async Task WhenSecretExists_AndSameValue_ThenDoNothing()
+            {
+                const string oldValue = "123";
+                const string newValue = "123";
+
+                await SaveSecretAsync(_name, oldValue);
+                
+                var result = await _sut.SafeSetValueAsync(_name, newValue);
+
+                Assert.That(result, Is.False);
+                Assert.That(await _sut.GetValueAsync(_name), Is.EqualTo(newValue));
             }
         }
 
