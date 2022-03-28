@@ -78,7 +78,9 @@ Methods:
 - DecryptAsync
 - EncryptAsync
 - GetAsync
+- SignAsync
 - UnwrapAsync
+- VerifyAsync
 - WrapAsync
 
 Example usage:
