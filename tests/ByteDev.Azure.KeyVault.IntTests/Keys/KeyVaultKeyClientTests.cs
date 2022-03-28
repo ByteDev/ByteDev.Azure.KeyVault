@@ -1,4 +1,5 @@
-﻿using Azure.Security.KeyVault.Keys;
+﻿using System;
+using Azure.Security.KeyVault.Keys;
 using Azure.Security.KeyVault.Keys.Cryptography;
 using ByteDev.Azure.KeyVault.Keys;
 using NUnit.Framework;
@@ -77,7 +78,68 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
 
                 var resultStr = Encoding.Unicode.GetString(result);
 
-                Assert.That(result, Is.Not.EqualTo(resultStr));
+                Assert.That(resultStr, Is.Not.EqualTo(ClearText));
+            }
+
+            [Test]
+            public void WhenKeyDoesNotExist_ThenThrowException()
+            {
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.EncryptAsync(TestKey.NonExistingName, EncryptionAlgorithm.RsaOaep, ClearText, Encoding.Unicode));
+            }
+        }
+
+        [TestFixture]
+        public class SignAsync : KeyVaultKeyClientTests
+        {
+            [Test]
+            public async Task WhenKeyExists_ThenSign()
+            {
+                var result = await _sut.SignAsync(TestKey.ExistingRsaKeyName, SignatureAlgorithm.RS256, ClearText, Encoding.Unicode);
+
+                var resultStr = Encoding.Unicode.GetString(result);
+
+                Assert.That(resultStr, Is.Not.EqualTo(ClearText));
+            }
+
+            [Test]
+            public void WhenKeyDoesNotExist_ThenThrowException()
+            {
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.SignAsync(TestKey.NonExistingName, SignatureAlgorithm.RS256, ClearText, Encoding.Unicode));
+            }
+        }
+
+        [TestFixture]
+        public class VerifyAsync : KeyVaultKeyClientTests
+        {
+            [Test]
+            public async Task WhenSignatureIsValidForDigest_ThenReturnTrue()
+            {
+                byte[] signature = await _sut.SignAsync(TestKey.ExistingRsaKeyName, SignatureAlgorithm.RS256, ClearText, Encoding.Unicode);
+
+                byte[] digest = Encoding.Unicode.GetBytes(ClearText);
+
+                var result = await _sut.VerifyAsync(TestKey.ExistingRsaKeyName, SignatureAlgorithm.RS256, digest, signature);
+
+                Assert.That(result, Is.True);   
+            }
+
+            [Test]
+            public async Task WhenSignatureIsInvalidForForDigest_ThenReturnFalse()
+            {
+                byte[] digest = Encoding.Unicode.GetBytes(ClearText);
+                byte[] signature = await _sut.SignAsync(TestKey.ExistingRsaKeyName, SignatureAlgorithm.RS256, digest);
+
+                byte[] diffDigest = Encoding.Unicode.GetBytes(ClearText + "a");
+
+                var result = await _sut.VerifyAsync(TestKey.ExistingRsaKeyName, SignatureAlgorithm.RS256, diffDigest, signature);
+
+                Assert.That(result, Is.False);
+            }
+
+            [Test]
+            public void WhenKeyDoesNotExist_ThenThrowException()
+            {
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.VerifyAsync(TestKey.NonExistingName, SignatureAlgorithm.RS256, new byte[0], new byte[0]));
             }
         }
 
@@ -92,6 +154,12 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
                 var result = await _sut.DecryptAsync(TestKey.ExistingRsaKeyName, EncryptionAlgorithm.RsaOaep, cipher, Encoding.Unicode);
 
                 Assert.That(result, Is.EqualTo(ClearText));
+            }
+
+            [Test]
+            public void WhenKeyDoesNotExist_ThenThrowException()
+            {
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.DecryptAsync(TestKey.NonExistingName, EncryptionAlgorithm.RsaOaep, new byte[0], Encoding.Unicode));
             }
         }
 

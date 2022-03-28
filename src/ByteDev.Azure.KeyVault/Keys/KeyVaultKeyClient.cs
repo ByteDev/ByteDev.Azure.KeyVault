@@ -38,6 +38,7 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// The token credential DefaultAzureCredential will be used to authenticate the client.
         /// </summary>
         /// <param name="keyVaultUri">Key vault URI.</param>
+        /// <exception cref="T:System.ArgumentException"><paramref name="keyVaultUri" /> is null or empty.</exception>
         public KeyVaultKeyClient(string keyVaultUri)
             : this(keyVaultUri, new DefaultAzureCredential())
         {
@@ -48,6 +49,8 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// </summary>
         /// <param name="keyVaultUri">Key vault URI.</param>
         /// <param name="tokenCredential">Token credential to use when authenticating the client.</param>
+        /// <exception cref="T:System.ArgumentException"><paramref name="keyVaultUri" /> is null or empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException"><paramref name="tokenCredential" /> is null.</exception>
         public KeyVaultKeyClient(string keyVaultUri, TokenCredential tokenCredential)
         {
             if (string.IsNullOrEmpty(keyVaultUri))
@@ -81,10 +84,11 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// <param name="keyName">Key name.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="keyName" /> is null or empty.</exception>
         /// <exception cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException">Key could not be found.</exception>
         public async Task<KeyVaultKey> GetAsync(string keyName, CancellationToken cancellationToken = default)
         {
-            if(string.IsNullOrEmpty(keyName))
+            if (string.IsNullOrEmpty(keyName))
                 throw new ArgumentException("Key name cannot be null or empty.", nameof(keyName));
 
             try
@@ -102,7 +106,7 @@ namespace ByteDev.Azure.KeyVault.Keys
             }
         }
 
-        #region Encrypt
+        #region Encrypt / Decrypt
 
         /// <summary>
         /// Encrypt text using an existing Key Vault key.
@@ -140,16 +144,12 @@ namespace ByteDev.Azure.KeyVault.Keys
             CancellationToken cancellationToken = default)
         {
             var cryptoClient = await CreateCryptoClientAsync(keyName, cancellationToken);
-
+            
             var encryptResult = await cryptoClient.EncryptAsync(algorithm, clearData, cancellationToken).ConfigureAwait(false);
             
             return encryptResult.Ciphertext;
         }
-
-        #endregion
-
-        #region Decrypt
-
+        
         /// <summary>
         /// Decrypt bytes using an existing Key Vault key and return as a string.
         /// </summary>
@@ -194,6 +194,77 @@ namespace ByteDev.Azure.KeyVault.Keys
 
         #endregion
 
+        #region Sign / Verify
+
+        /// <summary>
+        /// Sign a given digest using a Key Vault key. Returns the signature as a byte array.
+        /// </summary>
+        /// <param name="keyName">Name of existing Key Vault key.</param>
+        /// <param name="algorithm">Signature algorithm to use.</param>
+        /// <param name="digestText">Digest text to sign.</param>
+        /// <param name="digestTextEncoding">Encoding of the digest text.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <exception cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException">Key could not be found.</exception>
+        public Task<byte[]> SignAsync(string keyName,
+            SignatureAlgorithm algorithm,
+            string digestText,
+            Encoding digestTextEncoding,
+            CancellationToken cancellationToken = default)
+        {
+            byte[] clearData = digestTextEncoding.GetBytes(digestText);
+
+            return SignAsync(keyName, algorithm, clearData, cancellationToken);
+        }
+        
+        /// <summary>
+        /// Sign a given digest using a Key Vault key. Returns the signature as a byte array.
+        /// </summary>
+        /// <param name="keyName">Name of existing Key Vault key.</param>
+        /// <param name="algorithm">Signature algorithm to use.</param>
+        /// <param name="digest">Digest to sign.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <exception cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException">Key could not be found.</exception>
+        public async Task<byte[]> SignAsync(string keyName,
+            SignatureAlgorithm algorithm,
+            byte[] digest,
+            CancellationToken cancellationToken = default)
+        {
+            var cryptoClient = await CreateCryptoClientAsync(keyName, cancellationToken);
+
+            var result = await cryptoClient.SignAsync(algorithm, digest, cancellationToken).ConfigureAwait(false);
+
+            return result.Signature;
+        }
+        
+        /// <summary>
+        /// Verify a digest's signature. Returns true if valid.
+        /// </summary>
+        /// <param name="keyName">Name of existing Key Vault key.</param>
+        /// <param name="algorithm">Signature algorithm to use.</param>
+        /// <param name="digest">Digest corresponding to the signature.</param>
+        /// <param name="signature">Signature to verify the digest against.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <exception cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException">Key could not be found.</exception>
+        public async Task<bool> VerifyAsync(string keyName,
+            SignatureAlgorithm algorithm,
+            byte[] digest,
+            byte[] signature,
+            CancellationToken cancellationToken = default)
+        {
+            var cryptoClient = await CreateCryptoClientAsync(keyName, cancellationToken);
+
+            var result = await cryptoClient.VerifyAsync(algorithm, digest, signature, cancellationToken).ConfigureAwait(false);
+
+            return result.IsValid;
+        }
+
+        #endregion
+        
+        #region Wrap / Unwrap
+
         /// <summary>
         /// Wrap a symmetric key using an existing Key Vault asymmetric key.
         /// </summary>
@@ -236,7 +307,8 @@ namespace ByteDev.Azure.KeyVault.Keys
             return unwrapResult.Key;
         }
 
-
+        #endregion
+        
         private async Task<CryptographyClient> CreateCryptoClientAsync(string keyName, CancellationToken cancellationToken)
         {
             var key = await GetAsync(keyName, cancellationToken).ConfigureAwait(false);
