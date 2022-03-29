@@ -105,22 +105,6 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// </summary>
         /// <param name="keyName">Name of existing Key Vault key.</param>
         /// <param name="algorithm">Signature algorithm to use.</param>
-        /// <param name="digestText">Digest text to sign.</param>
-        /// <param name="digestTextEncoding">Encoding of the digest text.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
-        /// <exception cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException">Key could not be found.</exception>
-        Task<byte[]> SignAsync(string keyName,
-            SignatureAlgorithm algorithm,
-            string digestText,
-            Encoding digestTextEncoding,
-            CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Sign a given digest using a Key Vault key. Returns the signature as a byte array.
-        /// </summary>
-        /// <param name="keyName">Name of existing Key Vault key.</param>
-        /// <param name="algorithm">Signature algorithm to use.</param>
         /// <param name="digest">Digest to sign.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>The task object representing the asynchronous operation.</returns>

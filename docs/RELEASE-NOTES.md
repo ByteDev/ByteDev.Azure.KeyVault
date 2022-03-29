@@ -1,5 +1,16 @@
 # Release Notes
 
+## 2.0.0 - 29 March 2022
+
+Breaking changes:
+- Removed overload for `KeyVaultKeyClient.SignAsync`.
+
+New features:
+- (None)
+
+Bug fixes / internal changes:
+- (None)
+
 ## 1.2.0 - 28 March 2022
 
 Breaking changes:
