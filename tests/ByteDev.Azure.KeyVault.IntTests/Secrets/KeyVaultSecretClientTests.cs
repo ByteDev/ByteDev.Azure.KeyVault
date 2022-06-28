@@ -37,7 +37,7 @@ namespace ByteDev.Azure.KeyVault.IntTests.Secrets
 
             _sut = new KeyVaultSecretClient(keyVaultUri.AbsoluteUri, TestAzureKvSettings.ToClientSecretCredential());
         }
-        
+
         // [Test]
         // public async Task AdHocCleanUp()
         // {
@@ -228,7 +228,7 @@ namespace ByteDev.Azure.KeyVault.IntTests.Secrets
         }
 
         [TestFixture]
-        public class GetValuesIfExistsAsync : KeyVaultSecretClientTests
+        public class GetValuesIfExistsAsync_AwaitEachCallTrue : KeyVaultSecretClientTests
         {
             [Test]
             public async Task WhenNamesExist_ThenReturnNameValues()
@@ -258,6 +258,44 @@ namespace ByteDev.Azure.KeyVault.IntTests.Secrets
                 var value2 = await SaveSecretAsync(name2);
 
                 var result = await _sut.GetValuesIfExistsAsync(new[] { name1, name2, name2 });
+
+                Assert.That(result.Count, Is.EqualTo(2));
+                Assert.That(result[name1], Is.EqualTo(value1));
+                Assert.That(result[name2], Is.EqualTo(value2));
+            }
+        }
+
+        [TestFixture]
+        public class GetValuesIfExistsAsync_AwaitEachCallFalse : KeyVaultSecretClientTests
+        {
+            [Test]
+            public async Task WhenNamesExist_ThenReturnNameValues()
+            {
+                var name1 = TestSecret.NewName("GV");
+                var name2 = TestSecret.NewName("GV");
+                var name3 = TestSecret.NewName("GV");
+
+                var value1 = await SaveSecretAsync(name1);
+                var value2 = await SaveSecretAsync(name2);
+
+                var result = await _sut.GetValuesIfExistsAsync(new[] { name1, name2, name3 }, false);
+
+                Assert.That(result.Count, Is.EqualTo(3));
+                Assert.That(result[name1], Is.EqualTo(value1));
+                Assert.That(result[name2], Is.EqualTo(value2));
+                Assert.That(result[name3], Is.Null);
+            }
+
+            [Test]
+            public async Task WhenSameNameTwice_ThenAddOnlyOnce()
+            {
+                var name1 = TestSecret.NewName("GV");
+                var name2 = TestSecret.NewName("GV");
+
+                var value1 = await SaveSecretAsync(name1);
+                var value2 = await SaveSecretAsync(name2);
+
+                var result = await _sut.GetValuesIfExistsAsync(new[] { name1, name2, name2 }, false);
 
                 Assert.That(result.Count, Is.EqualTo(2));
                 Assert.That(result[name1], Is.EqualTo(value1));

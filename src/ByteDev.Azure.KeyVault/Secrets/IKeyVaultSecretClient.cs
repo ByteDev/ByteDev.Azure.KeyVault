@@ -86,10 +86,12 @@ namespace ByteDev.Azure.KeyVault.Secrets
         /// If any secret does not exist then it's value will be null.
         /// </summary>
         /// <param name="names">Collection of secret's names.</param>
+        /// <param name="awaitEachCall">True each call to Key Vault for each name will be awaited in turn. False all tasks will be awaited at the end of the operation. True by default.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>The task object representing the asynchronous operation. Result will be a dictionary of name values.</returns>
-        Task<IDictionary<string, string>> GetValuesIfExistsAsync(IEnumerable<string> names, CancellationToken cancellationToken = default);
-
+        /// <exception cref="T:System.ArgumentNullException"><paramref name="names" /> is null.</exception>
+        Task<IDictionary<string, string>> GetValuesIfExistsAsync(IEnumerable<string> names, bool awaitEachCall = true, CancellationToken cancellationToken = default);
+        
         #endregion
 
         #region Get Deleted

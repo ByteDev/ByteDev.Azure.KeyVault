@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure;
@@ -212,26 +213,19 @@ namespace ByteDev.Azure.KeyVault.Secrets
         /// If any secret does not exist then it's value will be null.
         /// </summary>
         /// <param name="names">Collection of secret's names.</param>
+        /// <param name="awaitEachCall">True each call to Key Vault for each name will be awaited in turn. False all tasks will be awaited at the end of the operation. True by default.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>The task object representing the asynchronous operation. Result will be a dictionary of name values.</returns>
-        public async Task<IDictionary<string, string>> GetValuesIfExistsAsync(IEnumerable<string> names, CancellationToken cancellationToken = default)
+        /// <exception cref="T:System.ArgumentNullException"><paramref name="names" /> is null.</exception>
+        public async Task<IDictionary<string, string>> GetValuesIfExistsAsync(IEnumerable<string> names, bool awaitEachCall = true, CancellationToken cancellationToken = default)
         {
             if (names == null)
                 throw new ArgumentNullException(nameof(names));
 
-            var nameValues = new Dictionary<string, string>();
+            if (awaitEachCall)
+                return await GetValuesIfExistsAwaitedAsync(names, cancellationToken);
 
-            foreach (var name in names)
-            {
-                if (!nameValues.ContainsKey(name))
-                {
-                    var value = await GetValueIfExistsAsync(name, cancellationToken).ConfigureAwait(false);
-
-                    nameValues.Add(name, value);
-                }
-            }
-
-            return nameValues;
+            return await GetValuesIfExistsNotAwaitedAsync(names, cancellationToken);
         }
 
         #endregion
@@ -517,6 +511,41 @@ namespace ByteDev.Azure.KeyVault.Secrets
                 return sectionName;
 
             return sectionName + "--";
+        }
+
+        private async Task<IDictionary<string, string>> GetValuesIfExistsAwaitedAsync(IEnumerable<string> names, CancellationToken cancellationToken)
+        {
+            var dictionary = new Dictionary<string, string>();
+
+            foreach (var name in names)
+            {
+                if (!dictionary.ContainsKey(name))
+                {
+                    var value = await GetValueIfExistsAsync(name, cancellationToken).ConfigureAwait(false);
+
+                    dictionary.Add(name, value);
+                }
+            }
+
+            return dictionary;
+        }
+
+        private async Task<IDictionary<string, string>> GetValuesIfExistsNotAwaitedAsync(IEnumerable<string> names, CancellationToken cancellationToken)
+        {
+            var nameTasks = new List<Tuple<string, Task<string>>>();
+
+            foreach (var name in names.Distinct())
+            {
+                var task = GetValueIfExistsAsync(name, cancellationToken);
+
+                nameTasks.Add(new Tuple<string, Task<string>>(name, task));
+            }
+
+            IEnumerable<Task<string>> tasks = nameTasks.Select(i => i.Item2);
+
+            await Task.WhenAll(tasks);
+
+            return nameTasks.ToDictionary();
         }
     }
 }
