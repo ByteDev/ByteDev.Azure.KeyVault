@@ -38,13 +38,6 @@ namespace ByteDev.Azure.KeyVault.IntTests.Secrets
             _sut = new KeyVaultSecretClient(keyVaultUri, TestAzureKvSettings.ToClientSecretCredential());
         }
 
-        // [Test]
-        // public async Task AdHocCleanUp()
-        // {
-        //     await _sut.DeleteAllAsync(true);
-        //     await _sut.PurgeAllDeletedAsync();
-        // }
-
         [TestFixture]
         public class ExistsAsync : KeyVaultSecretClientTests
         {
