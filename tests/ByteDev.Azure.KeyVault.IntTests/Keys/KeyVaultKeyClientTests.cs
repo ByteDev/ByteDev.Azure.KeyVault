@@ -20,7 +20,7 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
         {
             var keyVaultUri = KeyVaultUri.Create(TestAzureKvSettings.KeyVaultName);
 
-            _sut = new KeyVaultKeyClient(keyVaultUri.AbsoluteUri, TestAzureKvSettings.ToClientSecretCredential());
+            _sut = new KeyVaultKeyClient(keyVaultUri, TestAzureKvSettings.ToClientSecretCredential());
         }
 
         [TestFixture]

@@ -56,12 +56,40 @@ namespace ByteDev.Azure.KeyVault.Keys
             if (string.IsNullOrEmpty(keyVaultUri))
                 throw new ArgumentException("Key vault URI cannot be null or empty.", nameof(keyVaultUri));
 
-            _tokenCredential = tokenCredential ?? throw new ArgumentNullException(nameof(tokenCredential));
-
             KeyVaultUri = new Uri(keyVaultUri);
 
+            _tokenCredential = tokenCredential ?? throw new ArgumentNullException(nameof(tokenCredential));
+            
             _client = new KeyClient(KeyVaultUri, _tokenCredential);
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:ByteDev.Azure.KeyVault.Keys.KeyVaultSecretClient" /> class.
+        /// The token credential DefaultAzureCredential will be used to authenticate the client.
+        /// </summary>
+        /// <param name="keyVaultUri">Key vault URI.</param>
+        /// <exception cref="T:System.ArgumentNullException"><paramref name="keyVaultUri" /> is null.</exception>
+        public KeyVaultKeyClient(Uri keyVaultUri)
+            : this(keyVaultUri, new DefaultAzureCredential())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:ByteDev.Azure.KeyVault.Keys.KeyVaultSecretClient" /> class.
+        /// </summary>
+        /// <param name="keyVaultUri">Key vault URI.</param>
+        /// <param name="tokenCredential">Token credential to use when authenticating the client.</param>
+        /// <exception cref="T:System.ArgumentNullException"><paramref name="keyVaultUri" /> is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException"><paramref name="tokenCredential" /> is null.</exception>
+        public KeyVaultKeyClient(Uri keyVaultUri, TokenCredential tokenCredential)
+        {
+            KeyVaultUri = keyVaultUri ?? throw new ArgumentNullException(nameof(keyVaultUri));
+            _tokenCredential = tokenCredential ?? throw new ArgumentNullException(nameof(tokenCredential));
+            
+            _client = new KeyClient(KeyVaultUri, _tokenCredential);
+        }
+
+        #region Create / Get
 
         /// <summary>
         /// Create a new key. If the key name already exists then a new version is created
@@ -105,6 +133,8 @@ namespace ByteDev.Azure.KeyVault.Keys
                 throw;
             }
         }
+
+        #endregion
 
         #region Encrypt / Decrypt
 

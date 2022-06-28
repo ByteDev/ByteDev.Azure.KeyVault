@@ -7,6 +7,8 @@ Breaking changes:
 
 New features:
 - Added `KeyVaultSecretClient.GetValuesIfExistsAsync` method overload.
+- Added constructor overload to `KeyVaultSecretClient`.
+- Added constructor overload to `KeyVaultKeyClient`.
 
 Bug fixes / internal changes:
 - Update package dependencies.

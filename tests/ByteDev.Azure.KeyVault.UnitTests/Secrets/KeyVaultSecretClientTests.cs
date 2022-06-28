@@ -9,13 +9,24 @@ namespace ByteDev.Azure.KeyVault.UnitTests.Secrets
     public class KeyVaultSecretClientTests
     {
         private IKeyVaultSecretClient _sut;
+        private Uri _keyVaultUri;
 
         [SetUp]
         public void SetUp()
         {
-            var keyVaultUri = KeyVaultUri.Create("SomeKeyVaultName");
+            _keyVaultUri = KeyVaultUri.Create("SomeKeyVaultName");
 
-            _sut = new KeyVaultSecretClient(keyVaultUri.AbsoluteUri);
+            _sut = new KeyVaultSecretClient(_keyVaultUri);
+        }
+
+        [TestFixture]
+        public class Constructor : KeyVaultSecretClientTests
+        {
+            [Test]
+            public void WhenTokenCredentialIsNull_ThenThrowException()
+            {
+                Assert.Throws<ArgumentNullException>(() => _ = new KeyVaultSecretClient(_keyVaultUri, null));
+            }
         }
 
         [TestFixture]

@@ -14,6 +14,8 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// </summary>
         Uri KeyVaultUri { get; }
 
+        #region Create / Get
+
         /// <summary>
         /// Create a new key. If the key name already exists then a new version is created
         /// for the key.
@@ -33,6 +35,8 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// <exception cref="T:System.ArgumentException"><paramref name="keyName" /> is null or empty.</exception>
         /// <exception cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException">Key could not be found.</exception>
         Task<KeyVaultKey> GetAsync(string keyName, CancellationToken cancellationToken = default);
+
+        #endregion
 
         #region Encrypt / Decrypt
 

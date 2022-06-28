@@ -50,12 +50,47 @@ namespace ByteDev.Azure.KeyVault.Secrets
         /// <param name="keyVaultUri">Key vault URI.</param>
         /// <param name="tokenCredential">Token credential to use when authenticating the client.</param>
         /// <exception cref="T:System.ArgumentException"><paramref name="keyVaultUri" /> cannot be null or empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException"><paramref name="tokenCredential" /> is null.</exception>
         public KeyVaultSecretClient(string keyVaultUri, TokenCredential tokenCredential)
         {
             if (string.IsNullOrEmpty(keyVaultUri))
                 throw new ArgumentException("Key vault URI cannot be null or empty.", nameof(keyVaultUri));
 
+            if (tokenCredential == null)
+                throw new ArgumentNullException(nameof(tokenCredential));
+
             KeyVaultUri = new Uri(keyVaultUri);
+
+            _client = new SecretClient(KeyVaultUri, tokenCredential);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:ByteDev.Azure.KeyVault.Secrets.KeyVaultSecretClient" /> class.
+        /// The token credential DefaultAzureCredential will be used to authenticate the client.
+        /// </summary>
+        /// <param name="keyVaultUri">Key vault URI.</param>
+        /// <exception cref="T:System.ArgumentNullException"><paramref name="keyVaultUri" /> is null.</exception>
+        public KeyVaultSecretClient(Uri keyVaultUri)
+            : this(keyVaultUri, new DefaultAzureCredential())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:ByteDev.Azure.KeyVault.Secrets.KeyVaultSecretClient" /> class.
+        /// </summary>
+        /// <param name="keyVaultUri">Key vault URI.</param>
+        /// <param name="tokenCredential">Token credential to use when authenticating the client.</param>
+        /// <exception cref="T:System.ArgumentNullException"><paramref name="keyVaultUri" /> is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException"><paramref name="tokenCredential" /> is null.</exception>
+        public KeyVaultSecretClient(Uri keyVaultUri, TokenCredential tokenCredential)
+        {
+            if (keyVaultUri == null)
+                throw new ArgumentNullException(nameof(keyVaultUri));
+
+            if (tokenCredential == null)
+                throw new ArgumentNullException(nameof(tokenCredential));
+
+            KeyVaultUri = keyVaultUri;
 
             _client = new SecretClient(KeyVaultUri, tokenCredential);
         }
