@@ -1,5 +1,4 @@
-﻿using System;
-using Azure.Security.KeyVault.Keys;
+﻿using Azure.Security.KeyVault.Keys;
 using Azure.Security.KeyVault.Keys.Cryptography;
 using ByteDev.Azure.KeyVault.Keys;
 using NUnit.Framework;
@@ -51,7 +50,7 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
         }
 
         [TestFixture]
-        public class GetAsync: KeyVaultKeyClientTests
+        public class GetAsync : KeyVaultKeyClientTests
         {
             [Test]
             public async Task WhenKeyExists_ThenReturnKey()

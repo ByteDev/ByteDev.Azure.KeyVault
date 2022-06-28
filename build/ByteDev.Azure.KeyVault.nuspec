@@ -15,9 +15,9 @@
     <license type="file">LICENSE</license>
     <dependencies>
       <group targetFramework=".NETStandard2.1">
-        <dependency id="Azure.Identity" version="1.2.2" />
-        <dependency id="Azure.Security.KeyVault.Keys" version="4.1.0" />
-        <dependency id="Azure.Security.KeyVault.Secrets" version="4.1.0" />
+        <dependency id="Azure.Identity" version="1.6.0" />
+        <dependency id="Azure.Security.KeyVault.Keys" version="4.3.0" />
+        <dependency id="Azure.Security.KeyVault.Secrets" version="4.3.0" />
       </group>
     </dependencies>
   </metadata>

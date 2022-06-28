@@ -9,7 +9,7 @@ New features:
 - Added `KeyVaultSecretClient.GetValuesIfExistsAsync` method overload.
 
 Bug fixes / internal changes:
-- (None)
+- Update package dependencies.
 
 ## 2.0.0 - 29 March 2022
 
