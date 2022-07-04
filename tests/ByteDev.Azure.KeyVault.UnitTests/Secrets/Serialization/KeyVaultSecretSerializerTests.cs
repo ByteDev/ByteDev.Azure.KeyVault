@@ -37,11 +37,18 @@ namespace ByteDev.Azure.KeyVault.UnitTests.Secrets.Serialization
         public class DeserializeAsync : KeyVaultSecretSerializerTests
         {
             [Test]
-            public async Task WhenTypeHasNoProperties_ThenReturnNewInstance()
+            public async Task WhenTypeHasNoProperties_ThenDoNotCallKv()
             {
                 var result = await _sut.DeserializeAsync<TestPersonNoProperties>();
 
                 Assert.That(result, Is.Not.Null);
+
+                await _kvClient
+                    .DidNotReceiveWithAnyArgs()
+                    .GetValuesIfExistsAsync(
+                        Arg.Any<IEnumerable<string>>(),
+                        Arg.Any<bool>(),
+                        Arg.Any<CancellationToken>());
             }
 
             [Test]
