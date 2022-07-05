@@ -7,6 +7,11 @@ Breaking changes:
 
 New features:
 - Added `KeyVaultSecretSerializer` class.
+- Added `KeyVaultKeyClient.DeleteAsync` method.
+- Added `KeyVaultKeyClient.DeleteOrThrowAsync` method.
+- Added `KeyVaultKeyClient.ExistsAsync` method.
+- Added `KeyVaultKeyClient.PurgeAsync` method.
+- Added `KeyVaultKeyClient.PurgeOrThrowAsync` method.
 
 Bug fixes / internal changes:
 - (None)

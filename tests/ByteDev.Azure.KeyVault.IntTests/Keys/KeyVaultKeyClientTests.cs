@@ -1,10 +1,12 @@
-﻿using Azure.Security.KeyVault.Keys;
+﻿using System.Collections.Generic;
+using Azure.Security.KeyVault.Keys;
 using Azure.Security.KeyVault.Keys.Cryptography;
 using ByteDev.Azure.KeyVault.Keys;
 using NUnit.Framework;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using KeyNotFoundException = ByteDev.Azure.KeyVault.Keys.KeyNotFoundException;
 
 namespace ByteDev.Azure.KeyVault.IntTests.Keys
 {
@@ -13,7 +15,9 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
     {
         private const string ClearText = "Some test string";
 
-        private IKeyVaultKeyClient _sut;
+        private readonly IList<string> _createdKeys = new List<string>();
+
+        private KeyVaultKeyClient _sut;
 
         [SetUp]
         public void SetUp()
@@ -23,13 +27,135 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
             _sut = new KeyVaultKeyClient(keyVaultUri, TestAzureKvSettings.ToClientSecretCredential());
         }
 
+        [TearDown]
+        public async Task TearDown()
+        {
+            foreach (var key in _createdKeys)
+            {
+                await _sut.DeleteAsync(key, true);
+                await _sut.PurgeAsync(key);
+            }
+
+            _createdKeys.Clear();
+        }
+
+        private async Task SaveKeyAsync(string name)
+        {
+            TrackKey(name);
+
+            await _sut.CreateAsync(name, KeyType.Rsa);
+        }
+
+        private void TrackKey(string name)
+        {
+            _createdKeys.Add(name);
+        }
+
+        [TestFixture]
+        public class DeleteAsync : KeyVaultKeyClientTests
+        {
+            [Test]
+            public void WhenKeyDoesNotExist_ThenDoNothing()
+            {
+                Assert.DoesNotThrowAsync(() => _sut.DeleteAsync(TestKey.NotExistName, true));
+            }
+
+            [Test]
+            public async Task WhenKeyExists_ThenDelete()
+            {
+                var name = TestKey.NewName("Delete");
+
+                await SaveKeyAsync(name);
+
+                await _sut.DeleteAsync(name, true);
+
+                var exists = await _sut.ExistsAsync(name);
+
+                Assert.That(exists, Is.False);
+            }
+        }
+
+        [TestFixture]
+        public class DeleteOrThrowAsync : KeyVaultKeyClientTests
+        {
+            [Test]
+            public void WhenKeyDoesNotExist_ThenThrowException()
+            {
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.DeleteOrThrowAsync(TestKey.NotExistName, true));
+            }
+
+            [Test]
+            public async Task WhenKeyExists_ThenDelete()
+            {
+                var name = TestKey.NewName("DeleteOrThrow");
+
+                await SaveKeyAsync(name);
+
+                await _sut.DeleteOrThrowAsync(name, true);
+
+                var exists = await _sut.ExistsAsync(name);
+
+                Assert.That(exists, Is.False);
+            }
+        }
+
+        [TestFixture]
+        public class PurgeAsync : KeyVaultKeyClientTests
+        {
+            [Test]
+            public void WhenKeyDoesNotExist_ThenDoNothing()
+            { 
+                Assert.DoesNotThrowAsync(() => _sut.PurgeAsync(TestKey.NotExistName));
+            }
+
+            [Test]
+            public async Task WhenKeyHasBeenDeleted_ThenPurge()
+            {
+                var name = TestKey.NewName("DeleteOrThrow");
+
+                await SaveKeyAsync(name);
+
+                await _sut.DeleteOrThrowAsync(name, true);
+
+                await _sut.PurgeAsync(name);
+
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.PurgeOrThrowAsync(name));
+            }
+        }
+
+        [TestFixture]
+        public class ExistsAsync : KeyVaultKeyClientTests
+        {
+            [Test]
+            public async Task WhenKeyDoesNotExist_ThenReturnFalse()
+            {
+                var result = await _sut.ExistsAsync(TestKey.NotExistName);
+
+                Assert.That(result, Is.False);
+            }
+
+            [Test]
+            public async Task WhenKeyExists_ThenReturnTrue()
+            {
+                var name = TestKey.NewName("Exists");
+
+                await SaveKeyAsync(name);
+
+                var result = await _sut.ExistsAsync(name);
+                
+                Assert.That(result, Is.True);
+            }
+        }
+
         [TestFixture]
         public class CreateAsync : KeyVaultKeyClientTests
         {
             [Test]
             public async Task WhenKeyDoesNotExist_ThenCreatesKey()
             {
-                var name = TestKey.NewName("C");
+                var name = TestKey.NewName("Create");
+
+                TrackKey(name);
 
                 await _sut.CreateAsync(name, KeyType.Rsa);
 
@@ -63,7 +189,7 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
             [Test]
             public void WhenKeyDoesNotExist_ThenThrowException()
             {
-                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.GetAsync(TestKey.NonExistingName));
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.GetAsync(TestKey.NotExistName));
             }
         }
 
@@ -83,7 +209,7 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
             [Test]
             public void WhenKeyDoesNotExist_ThenThrowException()
             {
-                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.EncryptAsync(TestKey.NonExistingName, EncryptionAlgorithm.RsaOaep, ClearText, Encoding.Unicode));
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.EncryptAsync(TestKey.NotExistName, EncryptionAlgorithm.RsaOaep, ClearText, Encoding.Unicode));
             }
         }
 
@@ -103,7 +229,7 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
             [Test]
             public void WhenKeyDoesNotExist_ThenThrowException()
             {
-                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.DecryptAsync(TestKey.NonExistingName, EncryptionAlgorithm.RsaOaep, new byte[0], Encoding.Unicode));
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.DecryptAsync(TestKey.NotExistName, EncryptionAlgorithm.RsaOaep, new byte[0], Encoding.Unicode));
             }
         }
 
@@ -127,7 +253,7 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
             {
                 var digestData = GetDigest(ClearText);
 
-                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.SignAsync(TestKey.NonExistingName, SignatureAlgorithm.RS256, digestData));
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.SignAsync(TestKey.NotExistName, SignatureAlgorithm.RS256, digestData));
             }
         }
 
@@ -162,7 +288,7 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
             [Test]
             public void WhenKeyDoesNotExist_ThenThrowException()
             {
-                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.VerifyAsync(TestKey.NonExistingName, SignatureAlgorithm.RS256, new byte[0], new byte[0]));
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.VerifyAsync(TestKey.NotExistName, SignatureAlgorithm.RS256, new byte[0], new byte[0]));
             }
         }
 
@@ -172,7 +298,7 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
             [Test]
             public void WhenKeyDoesNotExist_ThenThrowException()
             {
-                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.WrapAsync(TestKey.NonExistingName, KeyWrapAlgorithm.RsaOaep, GenSymmetricKey()));
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.WrapAsync(TestKey.NotExistName, KeyWrapAlgorithm.RsaOaep, GenSymmetricKey()));
             }
         }
 
@@ -182,7 +308,7 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
             [Test]
             public void WhenKeyDoesNotExist_ThenThrowException()
             {
-                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.UnwrapAsync(TestKey.NonExistingName, KeyWrapAlgorithm.RsaOaep, new byte[] { 1 }));
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.UnwrapAsync(TestKey.NotExistName, KeyWrapAlgorithm.RsaOaep, new byte[] { 1 }));
             }
 
             [Test]

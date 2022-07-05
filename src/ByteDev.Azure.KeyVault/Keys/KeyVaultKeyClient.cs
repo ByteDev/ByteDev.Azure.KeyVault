@@ -89,7 +89,106 @@ namespace ByteDev.Azure.KeyVault.Keys
             _client = new KeyClient(KeyVaultUri, _tokenCredential);
         }
 
-        #region Create / Get
+        #region Delete / Purge
+
+        /// <summary>
+        /// Delete a key. If the key does not exist then no exception is thrown.
+        /// </summary>
+        /// <param name="keyName">Key name.</param>
+        /// <param name="waitToComplete">Indicates if the method should return only once the key is actually deleted. False by default.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="keyName" /> is null or empty.</exception>
+        public async Task DeleteAsync(string keyName, bool waitToComplete = false, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await DeleteOrThrowAsync(keyName, waitToComplete, cancellationToken);
+            }
+            catch (KeyNotFoundException)
+            {
+                // Swallow exception
+            }
+        }
+
+        /// <summary>
+        /// Delete a key. If the key does not exist then a <see cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException" /> is thrown.
+        /// </summary>
+        /// <param name="keyName">Key name.</param>
+        /// <param name="waitToComplete">Indicates if the method should return only once the key is actually deleted. False by default.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="keyName" /> is null or empty.</exception>
+        /// <exception cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException">Key could not be found.</exception>
+        public async Task DeleteOrThrowAsync(string keyName, bool waitToComplete = false, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrEmpty(keyName))
+                throw new ArgumentException("Key name cannot be null or empty.", nameof(keyName));
+
+            try
+            {
+                var response = await _client.StartDeleteKeyAsync(keyName, cancellationToken);
+
+                if (waitToComplete)
+                    await response.WaitForCompletionAsync(cancellationToken);
+            }
+            catch (RequestFailedException ex)
+            {
+                if (ex.IsNotFound())
+                    throw new KeyNotFoundException(ex);
+                    
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Purge a deleted key. If the deleted key does not exist then no exception is thrown.
+        /// </summary>
+        /// <param name="keyName">Key name.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="keyName" /> is null or empty.</exception>
+        public async Task PurgeAsync(string keyName, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await PurgeOrThrowAsync(keyName, cancellationToken);
+            }
+            catch (KeyNotFoundException)
+            {
+                // Swallow exception
+            }
+        }
+
+        /// <summary>
+        /// Purge a deleted key. If the deleted key does not exist then a <see cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException" /> is thrown.
+        /// </summary>
+        /// <param name="keyName">Key name.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="keyName" /> is null or empty.</exception>
+        /// <exception cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException">Key could not be found.</exception>
+        public async Task PurgeOrThrowAsync(string keyName, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrEmpty(keyName))
+                throw new ArgumentException("Key name cannot be null or empty.", nameof(keyName));
+
+            try
+            {
+                await _client.PurgeDeletedKeyAsync(keyName, cancellationToken);
+            }
+            catch (RequestFailedException ex)
+            {
+                if (ex.IsNotFound())
+                    throw new KeyNotFoundException(ex);
+                    
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Create / Exists / Get
 
         /// <summary>
         /// Create a new key. If the key name already exists then a new version is created
@@ -104,6 +203,26 @@ namespace ByteDev.Azure.KeyVault.Keys
             var response = await _client.CreateKeyAsync(keyName, keyType, cancellationToken: cancellationToken);
 
             return response.Value;
+        }
+
+        /// <summary>
+        /// Determines if a key exists.
+        /// </summary>
+        /// <param name="keyName">Key name.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>The task object representing the asynchronous operation. Result will be true if the key exists.</returns>
+        /// <exception cref="T:System.ArgumentException"><paramref name="keyName" /> is null or empty.</exception>
+        public async Task<bool> ExistsAsync(string keyName, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await GetAsync(keyName, cancellationToken);
+                return true;
+            }
+            catch (KeyNotFoundException)
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -122,7 +241,7 @@ namespace ByteDev.Azure.KeyVault.Keys
             try
             {
                 var response = await _client.GetKeyAsync(keyName, cancellationToken: cancellationToken);
-
+                
                 return response.Value;
             }
             catch (RequestFailedException ex)

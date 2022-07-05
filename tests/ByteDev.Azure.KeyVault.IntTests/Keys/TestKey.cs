@@ -8,11 +8,14 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
 
         public const string ExistingEcKeyName = "TestEcP256";
 
-        public const string NonExistingName = "ThisKeyDoesNotExist";
+        public const string NotExistName = "ThisKeyDoesNotExist";
 
-        public static string NewName(string prefix = "")
+        public static string NewName(string prefix = null)
         {
-            return prefix + Guid.NewGuid().ToString().Replace("-", string.Empty);
+            if (prefix == null)
+                return Guid.NewGuid().ToString("N");
+
+            return prefix + "-" + Guid.NewGuid().ToString("N");
         }
     }
 }
