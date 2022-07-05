@@ -168,6 +168,21 @@ namespace ByteDev.Azure.KeyVault.UnitTests.Secrets.Serialization
 
                 Assert.That(result.Mobile, Is.Null);
             }
+
+            [Test]
+            public async Task WhenHasBothIgnoreAndNameAttributes_ThenDoesNotSetProperty()
+            {
+                var secrets = new Dictionary<string, string>
+                {
+                    {"mobile", "01234567"}
+                };
+
+                WhenKvClientReturnsSecrets(secrets);
+                
+                var result = await _sut.DeserializeAsync<TestPersonWithIgnoreAndNameAttributes>();
+
+                Assert.That(result.Mobile, Is.Null);
+            }
         }
     }
 
@@ -195,6 +210,13 @@ namespace ByteDev.Azure.KeyVault.UnitTests.Secrets.Serialization
         public string EmailAddress { get; set; }
 
         [KeyVaultSecretIgnore]
+        public string Mobile { get; set; }
+    }
+
+    public class TestPersonWithIgnoreAndNameAttributes
+    {
+        [KeyVaultSecretIgnore]
+        [KeyVaultSecretName("mobile")]
         public string Mobile { get; set; }
     }
 }

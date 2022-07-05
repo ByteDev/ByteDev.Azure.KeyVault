@@ -76,7 +76,7 @@ namespace ByteDev.Azure.KeyVault.Secrets.Serialization
                 else
                 {
                     if (!attrProperty.HasAttribute<KeyVaultSecretIgnoreAttribute>())
-                        psns.Add(new PropertySecretName(propertyName, attrProperty.GetAttributeName()));
+                        psns.Add(new PropertySecretName(propertyName, attrProperty.GetAttributeSecretName()));
                 }
             }
             
