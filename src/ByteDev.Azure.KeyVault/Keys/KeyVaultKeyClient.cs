@@ -23,6 +23,8 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// </summary>
         public Uri KeyVaultUri { get; }
 
+        #region Constructor
+
         /// <summary>
         /// Initializes a new instance of the <see cref="T:ByteDev.Azure.KeyVault.Keys.KeyVaultSecretClient" /> class.
         /// The token credential DefaultAzureCredential will be used to authenticate the client.
@@ -89,6 +91,8 @@ namespace ByteDev.Azure.KeyVault.Keys
             _client = new KeyClient(KeyVaultUri, _tokenCredential);
         }
 
+        #endregion
+
         #region Delete / Purge
 
         /// <summary>
@@ -103,7 +107,7 @@ namespace ByteDev.Azure.KeyVault.Keys
         {
             try
             {
-                await DeleteAsync(keyName, waitToComplete, cancellationToken);
+                await DeleteAsync(keyName, waitToComplete, cancellationToken).ConfigureAwait(false);
             }
             catch (KeyNotFoundException)
             {
@@ -127,10 +131,10 @@ namespace ByteDev.Azure.KeyVault.Keys
 
             try
             {
-                var response = await _client.StartDeleteKeyAsync(keyName, cancellationToken);
+                var response = await _client.StartDeleteKeyAsync(keyName, cancellationToken).ConfigureAwait(false);
 
                 if (waitToComplete)
-                    await response.WaitForCompletionAsync(cancellationToken);
+                    await response.WaitForCompletionAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (RequestFailedException ex)
             {
@@ -152,7 +156,7 @@ namespace ByteDev.Azure.KeyVault.Keys
         {
             try
             {
-                await PurgeAsync(keyName, cancellationToken);
+                await PurgeAsync(keyName, cancellationToken).ConfigureAwait(false);
             }
             catch (KeyNotFoundException)
             {
@@ -175,7 +179,7 @@ namespace ByteDev.Azure.KeyVault.Keys
 
             try
             {
-                await _client.PurgeDeletedKeyAsync(keyName, cancellationToken);
+                await _client.PurgeDeletedKeyAsync(keyName, cancellationToken).ConfigureAwait(false);
             }
             catch (RequestFailedException ex)
             {
@@ -200,7 +204,7 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// <returns>The task object representing the asynchronous operation.</returns>
         public async Task<KeyVaultKey> CreateAsync(string keyName, KeyType keyType, CancellationToken cancellationToken = default)
         {
-            var response = await _client.CreateKeyAsync(keyName, keyType, cancellationToken: cancellationToken);
+            var response = await _client.CreateKeyAsync(keyName, keyType, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             return response.Value;
         }
@@ -216,7 +220,7 @@ namespace ByteDev.Azure.KeyVault.Keys
         {
             try
             {
-                await GetAsync(keyName, cancellationToken);
+                await GetAsync(keyName, cancellationToken).ConfigureAwait(false);
                 return true;
             }
             catch (KeyNotFoundException)
@@ -240,7 +244,7 @@ namespace ByteDev.Azure.KeyVault.Keys
 
             try
             {
-                var response = await _client.GetKeyAsync(keyName, cancellationToken: cancellationToken);
+                var response = await _client.GetKeyAsync(keyName, cancellationToken: cancellationToken).ConfigureAwait(false);
                 
                 return response.Value;
             }
@@ -292,7 +296,7 @@ namespace ByteDev.Azure.KeyVault.Keys
             byte[] clearData, 
             CancellationToken cancellationToken = default)
         {
-            var cryptoClient = await CreateCryptoClientAsync(keyName, cancellationToken);
+            var cryptoClient = await CreateCryptoClientAsync(keyName, cancellationToken).ConfigureAwait(false);
             
             var encryptResult = await cryptoClient.EncryptAsync(algorithm, clearData, cancellationToken).ConfigureAwait(false);
             
@@ -334,7 +338,7 @@ namespace ByteDev.Azure.KeyVault.Keys
             byte[] cipher, 
             CancellationToken cancellationToken = default)
         {
-            var cryptoClient = await CreateCryptoClientAsync(keyName, cancellationToken);
+            var cryptoClient = await CreateCryptoClientAsync(keyName, cancellationToken).ConfigureAwait(false);
 
             var dencryptResult = await cryptoClient.DecryptAsync(algorithm, cipher, cancellationToken).ConfigureAwait(false);
 
@@ -359,7 +363,7 @@ namespace ByteDev.Azure.KeyVault.Keys
             byte[] digest,
             CancellationToken cancellationToken = default)
         {
-            var cryptoClient = await CreateCryptoClientAsync(keyName, cancellationToken);
+            var cryptoClient = await CreateCryptoClientAsync(keyName, cancellationToken).ConfigureAwait(false);
 
             var result = await cryptoClient.SignAsync(algorithm, digest, cancellationToken).ConfigureAwait(false);
 
@@ -382,7 +386,7 @@ namespace ByteDev.Azure.KeyVault.Keys
             byte[] signature,
             CancellationToken cancellationToken = default)
         {
-            var cryptoClient = await CreateCryptoClientAsync(keyName, cancellationToken);
+            var cryptoClient = await CreateCryptoClientAsync(keyName, cancellationToken).ConfigureAwait(false);
 
             var result = await cryptoClient.VerifyAsync(algorithm, digest, signature, cancellationToken).ConfigureAwait(false);
 
