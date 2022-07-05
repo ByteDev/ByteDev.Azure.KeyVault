@@ -14,7 +14,7 @@ New features:
 - Added `KeyVaultKeyClient.PurgeIfDeletedAsync` method.
 
 Bug fixes / internal changes:
-- (None)
+- Added package `ByteDev.Reflection` dependency.
 
 ## 2.1.0 - 28 June 2022
 

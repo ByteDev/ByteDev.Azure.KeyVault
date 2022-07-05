@@ -18,6 +18,7 @@
         <dependency id="Azure.Identity" version="1.6.0" />
         <dependency id="Azure.Security.KeyVault.Keys" version="4.3.0" />
         <dependency id="Azure.Security.KeyVault.Secrets" version="4.3.0" />
+        <dependency id="ByteDev.Reflection" version="2.3.1" />
       </group>
     </dependencies>
   </metadata>
