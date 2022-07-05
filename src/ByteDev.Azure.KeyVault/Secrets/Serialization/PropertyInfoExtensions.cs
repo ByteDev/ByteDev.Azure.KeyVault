@@ -7,8 +7,8 @@ namespace ByteDev.Azure.KeyVault.Secrets.Serialization
     {
         public static string GetAttributeName(this PropertyInfo source)
         {
-            var attribute = (SecretNameAttribute)source
-                .GetCustomAttributes(typeof(SecretNameAttribute), false)
+            var attribute = (KeyVaultSecretNameAttribute)source
+                .GetCustomAttributes(typeof(KeyVaultSecretNameAttribute), false)
                 .Single();
 
             return attribute.Name;

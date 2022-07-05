@@ -7,7 +7,7 @@ namespace ByteDev.Azure.KeyVault.Secrets.Serialization
     /// when serializing and deserializing.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
-    public sealed class SecretNameAttribute : Attribute
+    public sealed class KeyVaultSecretNameAttribute : KeyVaultSecretAttribute
     {
         /// <summary>
         /// The name of the secret.
@@ -18,7 +18,7 @@ namespace ByteDev.Azure.KeyVault.Secrets.Serialization
         /// Initializes a new instance of the <see cref="T:ByteDev.Azure.KeyVault.Secrets.Serialization.SecretNameAttribute" /> class.
         /// </summary>
         /// <param name="name">Secret name.</param>
-        public SecretNameAttribute(string name)
+        public KeyVaultSecretNameAttribute(string name)
         {
             Name = name;
         }

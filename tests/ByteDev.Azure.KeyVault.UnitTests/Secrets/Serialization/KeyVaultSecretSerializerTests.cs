@@ -135,11 +135,11 @@ namespace ByteDev.Azure.KeyVault.UnitTests.Secrets.Serialization
             public async Task WhenUsesAttributesAndNot_ThenSetMatchingProperties()
             {
                 var secrets = new Dictionary<string, string>
-                 {
-                     {nameof(TestPersonWithAttributes.Name), "John"},
-                     {nameof(TestPersonWithAttributes.Address), "123 High Street"},
-                     {"email", "someone@somewhere.com" }
-                 };
+                {
+                    {nameof(TestPersonWithAttributes.Name), "John"},
+                    {nameof(TestPersonWithAttributes.Address), "123 High Street"},
+                    {"email", "someone@somewhere.com" }
+                };
 
                 WhenKvClientReturnsSecrets(secrets);
 
@@ -148,6 +148,25 @@ namespace ByteDev.Azure.KeyVault.UnitTests.Secrets.Serialization
                 Assert.That(result.Name, Is.EqualTo("John"));
                 Assert.That(result.Address, Is.Null);
                 Assert.That(result.EmailAddress, Is.EqualTo("someone@somewhere.com"));
+            }
+        }
+
+        [TestFixture]
+        public class DeserializeAsync_SecretIgnoreAttribute : KeyVaultSecretSerializerTests
+        {
+            [Test]
+            public async Task WhenHasMatchingName_AndIgnoreAttribute_ThenDoNotSetProperty()
+            {
+                var secrets = new Dictionary<string, string>
+                {
+                    {nameof(TestPersonWithAttributes.Mobile), "01234567"}
+                };
+
+                WhenKvClientReturnsSecrets(secrets);
+
+                var result = await _sut.DeserializeAsync<TestPersonWithAttributes>();
+
+                Assert.That(result.Mobile, Is.Null);
             }
         }
     }
@@ -169,10 +188,13 @@ namespace ByteDev.Azure.KeyVault.UnitTests.Secrets.Serialization
     {
         public string Name { get; set; }
 
-        [SecretName("address")]
+        [KeyVaultSecretName("address")]
         public string Address { get; set; }
 
-        [SecretName("email")]
+        [KeyVaultSecretName("email")]
         public string EmailAddress { get; set; }
+
+        [KeyVaultSecretIgnore]
+        public string Mobile { get; set; }
     }
 }

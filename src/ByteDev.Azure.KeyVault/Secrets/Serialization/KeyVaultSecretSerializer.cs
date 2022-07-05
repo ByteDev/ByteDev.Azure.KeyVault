@@ -61,7 +61,7 @@ namespace ByteDev.Azure.KeyVault.Secrets.Serialization
 
             var propertyNames = properties.Select(s => s.Name);
 
-            var propertiesWithAttr = typeof(T).GetPropertiesWithAttribute<SecretNameAttribute>().ToList();
+            var propertiesWithAttr = typeof(T).GetPropertiesWithAttribute<KeyVaultSecretAttribute>().ToList();
 
             var psns = new List<PropertySecretName>();
             
@@ -70,9 +70,14 @@ namespace ByteDev.Azure.KeyVault.Secrets.Serialization
                 var attrProperty = propertiesWithAttr.SingleOrDefault(p => p.Name == propertyName);
 
                 if (attrProperty == null)
+                {
                     psns.Add(new PropertySecretName(propertyName, options.SecretNamePrefix + propertyName));
+                }
                 else
-                    psns.Add(new PropertySecretName(propertyName, attrProperty.GetAttributeName()));
+                {
+                    if (!attrProperty.HasAttribute<KeyVaultSecretIgnoreAttribute>())
+                        psns.Add(new PropertySecretName(propertyName, attrProperty.GetAttributeName()));
+                }
             }
             
             return await _secretObjectFactory.CreateAsync<T>(psns, cancellationToken);
