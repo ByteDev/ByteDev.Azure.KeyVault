@@ -45,7 +45,6 @@ Methods:
 - GetValueIfExistsAsync
 - GetValuesIfExistsAsync
 - IsDeletedAsync
-- IsDeletedAsync
 - PurgeAllDeletedAsync
 - PurgeAsync
 - PurgeIfDeletedAsync
