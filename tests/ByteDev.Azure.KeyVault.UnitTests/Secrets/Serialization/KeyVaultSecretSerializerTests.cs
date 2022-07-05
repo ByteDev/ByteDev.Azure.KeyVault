@@ -23,6 +23,15 @@ namespace ByteDev.Azure.KeyVault.UnitTests.Secrets.Serialization
             _sut = new KeyVaultSecretSerializer(_kvClient);
         }
 
+        private void WhenKvClientReturnsSecrets(IDictionary<string, string> secrets)
+        {
+            _kvClient.GetValuesIfExistsAsync(
+                    Arg.Any<IEnumerable<string>>(),
+                    Arg.Any<bool>(),
+                    Arg.Any<CancellationToken>())
+                .Returns(secrets);
+        }
+
         [TestFixture]
         public class Constructor : KeyVaultSecretSerializerTests
         {
@@ -36,6 +45,12 @@ namespace ByteDev.Azure.KeyVault.UnitTests.Secrets.Serialization
         [TestFixture]
         public class DeserializeAsync : KeyVaultSecretSerializerTests
         {
+            [Test]
+            public void WhenOptionsIsNull_ThenThrowException()
+            {
+                Assert.ThrowsAsync<ArgumentNullException>(() => _ = _sut.DeserializeAsync<TestPerson>(null));
+            }
+
             [Test]
             public async Task WhenTypeHasNoProperties_ThenDoNotCallKv()
             {
@@ -54,7 +69,7 @@ namespace ByteDev.Azure.KeyVault.UnitTests.Secrets.Serialization
             [Test]
             public async Task WhenKvClientReturnsEmpty_ThenDoNotSetProperties()
             {
-                WhenKvClientReturnsNameValues(new Dictionary<string, string>());
+                WhenKvClientReturnsSecrets(new Dictionary<string, string>());
 
                 var result = await _sut.DeserializeAsync<TestPerson>();
 
@@ -66,13 +81,13 @@ namespace ByteDev.Azure.KeyVault.UnitTests.Secrets.Serialization
             [Test]
             public async Task WhenKvClientGetsValues_ThenSetMatchingProperties()
             {
-                var nameValues = new Dictionary<string, string>
+                var secrets = new Dictionary<string, string>
                 {
                     {nameof(TestPerson.Name), "John"}, 
                     {nameof(TestPerson.Age), "50" }
                 };
                 
-                WhenKvClientReturnsNameValues(nameValues);
+                WhenKvClientReturnsSecrets(secrets);
 
                 var result = await _sut.DeserializeAsync<TestPerson>();
 
@@ -80,14 +95,59 @@ namespace ByteDev.Azure.KeyVault.UnitTests.Secrets.Serialization
                 Assert.That(result.Age, Is.EqualTo(50));
                 Assert.That(result.Postcode, Is.Null);
             }
+        }
 
-            private void WhenKvClientReturnsNameValues(IDictionary<string, string> nameValues)
+        [TestFixture]
+        public class DeserializeAsync_SecretNameAttribute : KeyVaultSecretSerializerTests
+        {
+            [Test]
+            public async Task WhenHasMatchingAttributeName_ThenSetProperty()
             {
-                _kvClient.GetValuesIfExistsAsync(
-                        Arg.Any<IEnumerable<string>>(),
-                        Arg.Any<bool>(),
-                        Arg.Any<CancellationToken>())
-                    .Returns(nameValues);
+                var secrets = new Dictionary<string, string>
+                {
+                    {"email", "someone@somewhere.com" }
+                };
+
+                WhenKvClientReturnsSecrets(secrets);
+
+                var result = await _sut.DeserializeAsync<TestPersonWithAttributes>();
+                
+                Assert.That(result.EmailAddress, Is.EqualTo("someone@somewhere.com"));
+            }
+
+            [TestCase("EmailAddress")]
+            [TestCase("Email")]
+            public async Task WhenAttributeNameDoesNotMatch_ThenDoNotSetProperty(string secretName)
+            {
+                var secrets = new Dictionary<string, string>
+                {
+                    {secretName, "someone@somewhere.com" }
+                };
+
+                WhenKvClientReturnsSecrets(secrets);
+
+                var result = await _sut.DeserializeAsync<TestPersonWithAttributes>();
+                
+                Assert.That(result.EmailAddress, Is.Null);
+            }
+
+            [Test]
+            public async Task WhenUsesAttributesAndNot_ThenSetMatchingProperties()
+            {
+                var secrets = new Dictionary<string, string>
+                 {
+                     {nameof(TestPersonWithAttributes.Name), "John"},
+                     {nameof(TestPersonWithAttributes.Address), "123 High Street"},
+                     {"email", "someone@somewhere.com" }
+                 };
+
+                WhenKvClientReturnsSecrets(secrets);
+
+                var result = await _sut.DeserializeAsync<TestPersonWithAttributes>();
+
+                Assert.That(result.Name, Is.EqualTo("John"));
+                Assert.That(result.Address, Is.Null);
+                Assert.That(result.EmailAddress, Is.EqualTo("someone@somewhere.com"));
             }
         }
     }
@@ -103,5 +163,16 @@ namespace ByteDev.Azure.KeyVault.UnitTests.Secrets.Serialization
         public int Age { get; set; }
 
         public string Postcode { get; set; }
+    }
+
+    public class TestPersonWithAttributes
+    {
+        public string Name { get; set; }
+
+        [SecretName("address")]
+        public string Address { get; set; }
+
+        [SecretName("email")]
+        public string EmailAddress { get; set; }
     }
 }

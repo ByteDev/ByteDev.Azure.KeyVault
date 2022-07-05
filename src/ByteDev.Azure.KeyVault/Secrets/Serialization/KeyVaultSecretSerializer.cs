@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -7,47 +8,74 @@ using ByteDev.Reflection;
 
 namespace ByteDev.Azure.KeyVault.Secrets.Serialization
 {
+    /// <summary>
+    /// Represents a serializer for Azure Key Vault secrets.
+    /// </summary>
     public class KeyVaultSecretSerializer
     {
-        private readonly IKeyVaultSecretClient _keyVaultClient;
+        private readonly SecretObjectFactory _secretObjectFactory;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:ByteDev.Azure.KeyVault.Secrets.Serialization.KeyVaultSecretSerializer" /> class.
+        /// </summary>
+        /// <param name="keyVaultClient">Key vault client.</param>
+        /// <exception cref="T:System.ArgumentNullException"><paramref name="keyVaultClient" /> is null.</exception>
         public KeyVaultSecretSerializer(IKeyVaultSecretClient keyVaultClient)
         {
-            _keyVaultClient = keyVaultClient ?? throw new ArgumentNullException(nameof(keyVaultClient));
+            if (keyVaultClient == null)
+                throw new ArgumentNullException(nameof(keyVaultClient));
+
+            _secretObjectFactory = new SecretObjectFactory(keyVaultClient);
         }
 
+        /// <summary>
+        /// Deserializes Azure Key Vault secrets to an object.
+        /// </summary>
+        /// <typeparam name="T">Type of object to deserialize to.</typeparam>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>New instance of type <typeparamref name="T" />.</returns>
         public Task<T> DeserializeAsync<T>(CancellationToken cancellationToken = default)
             where T : class, new()
         {
-            return DeserializeAsync<T>(null, cancellationToken);
+            return DeserializeAsync<T>(new DeserializeOptions(), cancellationToken);
         }
 
-        public async Task<T> DeserializeAsync<T>(string settingPrefix, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Deserializes Azure Key Vault secrets to an object.
+        /// </summary>
+        /// <typeparam name="T">Type of object to deserialize to.</typeparam>
+        /// <param name="options">Deserialize options.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>New instance of type <typeparamref name="T" />.</returns>
+        /// <exception cref="T:System.ArgumentNullException"><paramref name="options" /> is null.</exception>
+        public async Task<T> DeserializeAsync<T>(DeserializeOptions options, CancellationToken cancellationToken = default)
             where T : class, new()
         {
-            var obj = new T();
+            if (options == null) 
+                throw new ArgumentNullException(nameof(options));
 
             var properties = typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
             if (properties.Length == 0)
-                return obj;
+                return new T();
 
-            var propertyNames = properties.Select(s => s.Name).ToList();
-            var kvNames = properties.Select(s => settingPrefix + s.Name);
+            var propertyNames = properties.Select(s => s.Name);
 
-            var dictionary = await _keyVaultClient.GetValuesIfExistsAsync(kvNames, false, cancellationToken);
+            var propertiesWithAttr = typeof(T).GetPropertiesWithAttribute<SecretNameAttribute>().ToList();
+
+            var psns = new List<PropertySecretName>();
             
-            int index = 0;
-
-            foreach (var item in dictionary)
+            foreach (var propertyName in propertyNames)
             {
-                if (item.Value != null)
-                    obj.SetPropertyValue(propertyNames[index], item.Value);
+                var attrProperty = propertiesWithAttr.SingleOrDefault(p => p.Name == propertyName);
 
-                index++;
+                if (attrProperty == null)
+                    psns.Add(new PropertySecretName(propertyName, options.SecretNamePrefix + propertyName));
+                else
+                    psns.Add(new PropertySecretName(propertyName, attrProperty.GetAttributeName()));
             }
-
-            return obj;
+            
+            return await _secretObjectFactory.CreateAsync<T>(psns, cancellationToken);
         }
     }
 }
