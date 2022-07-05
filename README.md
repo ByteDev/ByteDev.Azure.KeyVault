@@ -4,11 +4,11 @@
 
 # ByteDev.Azure.KeyVault
 
-.NET Standard library providing some Azure Key Vault functionality.
+.NET Standard library that provides some extended Azure Key Vault functionality build on top of the official Azure packages.
 
 ## Installation
 
-ByteDev.Azure.KeyVault has been written as a .NET Standard 2.1 library and is based on the `Azure.Security.KeyVault.Secrets` package.
+ByteDev.Azure.KeyVault has been written as a .NET Standard 2.1 library.
 
 ByteDev.Azure.KeyVault is hosted as a package on nuget.org.  To install from the Package Manager Console in Visual Studio run:
 
@@ -26,9 +26,10 @@ Full details of the release notes can be viewed on [GitHub](https://github.com/B
 
 ### Secrets
 
-Secrets functionality is accessed through the `KeyVaultSecretClient` class in namespace `ByteDev.Azure.KeyVault.Secrets`.
+Secrets functionality is accessed through the `KeyVaultSecretClient` class.
 
 Methods:
+
 - DeleteAllAsync
 - DeleteAndPurgeAsync
 - DeleteAsync
@@ -54,6 +55,10 @@ Methods:
 Example usage:
 
 ```csharp
+using ByteDev.Azure.KeyVault.Secrets;
+
+// ...
+
 IKeyVaultSecretClient client = new KeyVaultSecretClient(keyVaultUri);
 
 // Create a secret
@@ -69,32 +74,86 @@ await client.DeleteAsync("Test1", true);
 await client.PurgeAsync("Test1");
 ```
 
+---
+
+### Secrets.Serialization
+
+Deserialize Azure Key Vault secrets directly to a new class instance.
+
+```csharp
+// Entitiy class (class you want to deserialize to)
+
+public class Person
+{
+    public string Name { get; set; }
+
+    [KeyVaultSecretName("email")]
+    public string EmailAddress { get; set; }
+
+    [KeyVaultSecretIgnore]
+    public string Mobile { get; set; }
+}
+```
+
+The class above will check Azure Key Vault for the following named secrets:
+- `Name`
+- `email`
+
+The `Mobile` property will not be set on deserialization as it has been decorated with a `KeyVaultSecretIgnoreAttribute`.
+
+```csharp
+using ByteDev.Azure.KeyVault.Secrets;
+using ByteDev.Azure.KeyVault.Secrets.Serialization;
+
+// ...
+
+IKeyVaultSecretClient client = new KeyVaultSecretClient(keyVaultUri);
+
+var serializer = new KeyVaultSecretSerializer(client);
+
+var person = await serializer.DeserializeAsync<Person>();
+
+// person.Name == (Value of "Name" secret)
+// person.EmailAddress == (Value of "email" secret)
+// person.Mobile == null
+```
+
+---
+
 ### Keys
 
-Keys functionality is accessed through the `KeyVaultKeyClient` class in namespace `ByteDev.Azure.KeyVault.Keys`.
+Keys functionality is accessed through the `KeyVaultKeyClient` class.
 
 Methods:
+
 - CreateAsync
-- DecryptAsync
-- EncryptAsync
+- DeleteAsync
+- DeleteIfExistsAsync
+- EncryptAsync / DecryptAsync
+- ExistsAsync
 - GetAsync
-- SignAsync
-- UnwrapAsync
-- VerifyAsync
-- WrapAsync
+- PurgeAsync
+- PurgeIfDeletedAsync
+- SignAsync / VerifyAsync
+- WrapAsync / UnwrapAsync
 
 Example usage:
 
 ```csharp
+using ByteDev.Azure.KeyVault.Keys;
+
+// ...
+
 IKeyVaultKeyClient client = new KeyVaultKeyClient(keyVaultUri);
 
+const string keyName = "MyKey";
 const string clearText = "test string";
 
 // Encrypt/decrypt some text using the Key Vault key
 
-byte[] cipher = await client.EncryptAsync("Test1", EncryptionAlgorithm.RsaOaep, clearText, Encoding.Unicode);
+byte[] cipher = await client.EncryptAsync(keyName, EncryptionAlgorithm.RsaOaep, clearText, Encoding.Unicode);
 
-string result = await client.DecryptAsync("Test1", EncryptionAlgorithm.RsaOaep, cipher, Encoding.Unicode);
+string result = await client.DecryptAsync(keyName, EncryptionAlgorithm.RsaOaep, cipher, Encoding.Unicode);
 
 // result == "test string"
 ```

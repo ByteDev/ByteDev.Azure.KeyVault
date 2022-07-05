@@ -17,7 +17,7 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
 
         private readonly IList<string> _createdKeys = new List<string>();
 
-        private KeyVaultKeyClient _sut;
+        private IKeyVaultKeyClient _sut;
 
         [SetUp]
         public void SetUp()
@@ -32,8 +32,8 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
         {
             foreach (var key in _createdKeys)
             {
-                await _sut.DeleteAsync(key, true);
-                await _sut.PurgeAsync(key);
+                await _sut.DeleteIfExistsAsync(key, true);
+                await _sut.PurgeIfDeletedAsync(key);
             }
 
             _createdKeys.Clear();
@@ -55,9 +55,9 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
         public class DeleteAsync : KeyVaultKeyClientTests
         {
             [Test]
-            public void WhenKeyDoesNotExist_ThenDoNothing()
+            public void WhenKeyDoesNotExist_ThenThrowException()
             {
-                Assert.DoesNotThrowAsync(() => _sut.DeleteAsync(TestKey.NotExistName, true));
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.DeleteAsync(TestKey.NotExistName, true));
             }
 
             [Test]
@@ -76,22 +76,22 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
         }
 
         [TestFixture]
-        public class DeleteOrThrowAsync : KeyVaultKeyClientTests
+        public class DeleteIfExistsAsync : KeyVaultKeyClientTests
         {
             [Test]
-            public void WhenKeyDoesNotExist_ThenThrowException()
+            public void WhenKeyDoesNotExist_ThenDoNothing()
             {
-                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.DeleteOrThrowAsync(TestKey.NotExistName, true));
+                Assert.DoesNotThrowAsync(() => _sut.DeleteIfExistsAsync(TestKey.NotExistName, true));
             }
 
             [Test]
             public async Task WhenKeyExists_ThenDelete()
             {
-                var name = TestKey.NewName("DeleteOrThrow");
+                var name = TestKey.NewName("DeleteIfExists");
 
                 await SaveKeyAsync(name);
 
-                await _sut.DeleteOrThrowAsync(name, true);
+                await _sut.DeleteIfExistsAsync(name, true);
 
                 var exists = await _sut.ExistsAsync(name);
 
@@ -103,23 +103,47 @@ namespace ByteDev.Azure.KeyVault.IntTests.Keys
         public class PurgeAsync : KeyVaultKeyClientTests
         {
             [Test]
-            public void WhenKeyDoesNotExist_ThenDoNothing()
-            { 
-                Assert.DoesNotThrowAsync(() => _sut.PurgeAsync(TestKey.NotExistName));
+            public void WhenKeyDoesNotExist_ThenThrowException()
+            {
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.PurgeAsync(TestKey.NotExistName));
             }
 
             [Test]
             public async Task WhenKeyHasBeenDeleted_ThenPurge()
             {
-                var name = TestKey.NewName("DeleteOrThrow");
+                var name = TestKey.NewName("Purge");
 
                 await SaveKeyAsync(name);
 
-                await _sut.DeleteOrThrowAsync(name, true);
+                await _sut.DeleteAsync(name, true);
 
                 await _sut.PurgeAsync(name);
 
-                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.PurgeOrThrowAsync(name));
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.PurgeAsync(name));
+            }
+        }
+
+        [TestFixture]
+        public class PurgeIfDeletedAsync : KeyVaultKeyClientTests
+        {
+            [Test]
+            public void WhenKeyDoesNotExist_ThenDoNothing()
+            { 
+                Assert.DoesNotThrowAsync(() => _sut.PurgeIfDeletedAsync(TestKey.NotExistName));
+            }
+
+            [Test]
+            public async Task WhenKeyHasBeenDeleted_ThenPurge()
+            {
+                var name = TestKey.NewName("PurgeIfDeleted");
+
+                await SaveKeyAsync(name);
+
+                await _sut.DeleteAsync(name, true);
+
+                await _sut.PurgeIfDeletedAsync(name);
+
+                Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.PurgeAsync(name));
             }
         }
 

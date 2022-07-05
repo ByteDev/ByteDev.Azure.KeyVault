@@ -8,7 +8,7 @@
     <owners>Paul Stanley</owners>
     <copyright>Copyright 2020</copyright>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>.NET Standard library that provides some Azure Key Vault functionality.</description>
+    <description>.NET Standard library that provides some extended Azure Key Vault functionality build on top of the official Azure packages.</description>
     <tags>azure keyvault key vault secret secrets</tags>
     <projectUrl>https://github.com/ByteDev/ByteDev.Azure.KeyVault</projectUrl>
     <icon>images\icon.png</icon>

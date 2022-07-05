@@ -99,11 +99,11 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>The task object representing the asynchronous operation.</returns>
         /// <exception cref="T:System.ArgumentException"><paramref name="keyName" /> is null or empty.</exception>
-        public async Task DeleteAsync(string keyName, bool waitToComplete = false, CancellationToken cancellationToken = default)
+        public async Task DeleteIfExistsAsync(string keyName, bool waitToComplete = false, CancellationToken cancellationToken = default)
         {
             try
             {
-                await DeleteOrThrowAsync(keyName, waitToComplete, cancellationToken);
+                await DeleteAsync(keyName, waitToComplete, cancellationToken);
             }
             catch (KeyNotFoundException)
             {
@@ -120,7 +120,7 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// <returns>The task object representing the asynchronous operation.</returns>
         /// <exception cref="T:System.ArgumentException"><paramref name="keyName" /> is null or empty.</exception>
         /// <exception cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException">Key could not be found.</exception>
-        public async Task DeleteOrThrowAsync(string keyName, bool waitToComplete = false, CancellationToken cancellationToken = default)
+        public async Task DeleteAsync(string keyName, bool waitToComplete = false, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(keyName))
                 throw new ArgumentException("Key name cannot be null or empty.", nameof(keyName));
@@ -148,11 +148,11 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>The task object representing the asynchronous operation.</returns>
         /// <exception cref="T:System.ArgumentException"><paramref name="keyName" /> is null or empty.</exception>
-        public async Task PurgeAsync(string keyName, CancellationToken cancellationToken = default)
+        public async Task PurgeIfDeletedAsync(string keyName, CancellationToken cancellationToken = default)
         {
             try
             {
-                await PurgeOrThrowAsync(keyName, cancellationToken);
+                await PurgeAsync(keyName, cancellationToken);
             }
             catch (KeyNotFoundException)
             {
@@ -168,7 +168,7 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// <returns>The task object representing the asynchronous operation.</returns>
         /// <exception cref="T:System.ArgumentException"><paramref name="keyName" /> is null or empty.</exception>
         /// <exception cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException">Key could not be found.</exception>
-        public async Task PurgeOrThrowAsync(string keyName, CancellationToken cancellationToken = default)
+        public async Task PurgeAsync(string keyName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(keyName))
                 throw new ArgumentException("Key name cannot be null or empty.", nameof(keyName));

@@ -8,10 +8,10 @@ Breaking changes:
 New features:
 - Added `KeyVaultSecretSerializer` class.
 - Added `KeyVaultKeyClient.DeleteAsync` method.
-- Added `KeyVaultKeyClient.DeleteOrThrowAsync` method.
+- Added `KeyVaultKeyClient.DeleteIfExistsAsync` method.
 - Added `KeyVaultKeyClient.ExistsAsync` method.
 - Added `KeyVaultKeyClient.PurgeAsync` method.
-- Added `KeyVaultKeyClient.PurgeOrThrowAsync` method.
+- Added `KeyVaultKeyClient.PurgeIfDeletedAsync` method.
 
 Bug fixes / internal changes:
 - (None)
@@ -27,7 +27,10 @@ New features:
 - Added constructor overload to `KeyVaultKeyClient`.
 
 Bug fixes / internal changes:
-- Update package dependencies.
+- Update package dependencies:
+  - Azure.Identity 1.6.0
+  - Azure.Security.KeyVault.Keys 4.3.0
+  - Azure.Security.KeyVault.Secrets 4.3.0
 
 ## 2.0.0 - 29 March 2022
 

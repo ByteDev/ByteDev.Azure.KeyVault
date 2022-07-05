@@ -22,7 +22,7 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>The task object representing the asynchronous operation.</returns>
         /// <exception cref="T:System.ArgumentException"><paramref name="keyName" /> is null or empty.</exception>
-        Task DeleteAsync(string keyName, bool waitToComplete = false, CancellationToken cancellationToken = default);
+        Task DeleteIfExistsAsync(string keyName, bool waitToComplete = false, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Delete a key. If the key does not exist then a <see cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException" /> is thrown.
@@ -33,7 +33,7 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// <returns>The task object representing the asynchronous operation.</returns>
         /// <exception cref="T:System.ArgumentException"><paramref name="keyName" /> is null or empty.</exception>
         /// <exception cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException">Key could not be found.</exception>
-        Task DeleteOrThrowAsync(string keyName, bool waitToComplete = false, CancellationToken cancellationToken = default);
+        Task DeleteAsync(string keyName, bool waitToComplete = false, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Purge a deleted key. If the deleted key does not exist then no exception is thrown.
@@ -42,7 +42,7 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>The task object representing the asynchronous operation.</returns>
         /// <exception cref="T:System.ArgumentException"><paramref name="keyName" /> is null or empty.</exception>
-        Task PurgeAsync(string keyName, CancellationToken cancellationToken = default);
+        Task PurgeIfDeletedAsync(string keyName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Purge a deleted key. If the deleted key does not exist then a <see cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException" /> is thrown.
@@ -52,7 +52,7 @@ namespace ByteDev.Azure.KeyVault.Keys
         /// <returns>The task object representing the asynchronous operation.</returns>
         /// <exception cref="T:System.ArgumentException"><paramref name="keyName" /> is null or empty.</exception>
         /// <exception cref="T:ByteDev.Azure.KeyVault.Keys.KeyNotFoundException">Key could not be found.</exception>
-        Task PurgeOrThrowAsync(string keyName, CancellationToken cancellationToken = default);
+        Task PurgeAsync(string keyName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Create a new key. If the key name already exists then a new version is created
