@@ -108,7 +108,7 @@ using ByteDev.Azure.KeyVault.Secrets.Serialization;
 
 IKeyVaultSecretClient client = new KeyVaultSecretClient(keyVaultUri);
 
-var serializer = new KeyVaultSecretSerializer(client);
+IKeyVaultSecretSerializer serializer = new KeyVaultSecretSerializer(client);
 
 var person = await serializer.DeserializeAsync<Person>();
 
