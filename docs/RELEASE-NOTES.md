@@ -1,6 +1,6 @@
 # Release Notes
 
-## 2.3.0 - ?
+## 2.3.0 - 06 July 2022
 
 Breaking changes:
 - (None)
