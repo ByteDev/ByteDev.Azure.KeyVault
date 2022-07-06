@@ -1,5 +1,16 @@
 # Release Notes
 
+## 2.3.0 - ?
+
+Breaking changes:
+- (None)
+
+New features:
+- Added `IKeyVaultSecretSerializer` interface.
+
+Bug fixes / internal changes:
+- (None)
+
 ## 2.2.0 - 05 July 2022
 
 Breaking changes:

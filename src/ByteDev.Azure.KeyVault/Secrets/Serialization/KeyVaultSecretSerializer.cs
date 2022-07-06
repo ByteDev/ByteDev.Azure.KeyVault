@@ -11,7 +11,7 @@ namespace ByteDev.Azure.KeyVault.Secrets.Serialization
     /// <summary>
     /// Represents a serializer for Azure Key Vault secrets.
     /// </summary>
-    public class KeyVaultSecretSerializer
+    public class KeyVaultSecretSerializer : IKeyVaultSecretSerializer
     {
         private readonly SecretObjectFactory _secretObjectFactory;
 
