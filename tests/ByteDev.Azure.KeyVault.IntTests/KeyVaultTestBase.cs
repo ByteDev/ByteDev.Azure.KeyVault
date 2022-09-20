@@ -1,23 +1,18 @@
-﻿using System.Reflection;
-using ByteDev.Azure.KeyVault.IntTests.Secrets;
-using ByteDev.Testing;
+﻿using ByteDev.Testing.Settings;
+using ByteDev.Testing.Settings.Entities;
+using ByteDev.Testing.Settings.Providers;
 
 namespace ByteDev.Azure.KeyVault.IntTests
 {
     public class KeyVaultTestBase
     {
-        public TestAzureKvSettings TestAzureKvSettings { get; set; }
+        public TestAzureKeyVaultSettings TestAzureKvSettings { get; }
 
         public KeyVaultTestBase()
         {
-            var assembly = Assembly.GetAssembly(typeof(KeyVaultSecretClientTests));
-
-            var testSettings = new TestSettings(assembly)
-            {
-                FilePaths = new[] {@"Z:\Dev\ByteDev.Azure.KeyVault.IntTests.settings.json"}
-            };
-            
-            TestAzureKvSettings = testSettings.GetSettings<TestAzureKvSettings>();
+            TestAzureKvSettings = new TestSettings()
+                .AddProvider(new JsonFileSettingsProvider(@"Z:\Dev\ByteDev.Azure.KeyVault.IntTests.settings.json"))
+                .GetAzureKeyVaultSettings();
         }
     }
 }
